@@ -10,3 +10,4 @@ ex = "0.1"
 chrono = "0.4"
 chrono-tz = "0.8"
 http_req = {version="0.9",features=["rust-tls"],default-features=false}
+clap = { version = "4.0.29", features = ["derive"] }
