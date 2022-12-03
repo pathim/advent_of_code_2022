@@ -75,5 +75,5 @@ pub fn f(file: std::fs::File) -> crate::AocResult {
         .map(|l| (get_theirs(&l), get_mine(&l)))
         .map(|(t, m)| (get_score(m, t), get_score_from_result(t, m)))
         .fold((0, 0), |(r1, r2), (x1, x2)| (r1 + x1, r2 + x2));
-    (format!("{}", res1), Some(format!("{}", res2)))
+    (res1, res2).into()
 }

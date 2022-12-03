@@ -21,5 +21,5 @@ pub fn f(file: std::fs::File) -> crate::AocResult {
     let res1 = cal.pop().expect("No values available");
     let res2 = res1 + cal.pop().unwrap() + cal.pop().unwrap();
 
-    (format!("{}", res1), Some(format!("{}", res2)))
+    (res1, res2).into()
 }

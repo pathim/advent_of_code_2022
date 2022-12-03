@@ -1,27 +1,23 @@
 mod aoc2022;
+mod aoc_result;
 mod input;
+
+pub use aoc_result::AocResult;
 
 use clap::Parser;
 
-type AocResult = (String, Option<String>);
 type AocFun = fn(std::fs::File) -> AocResult;
 
 fn wrap_func(func: &AocFun, input: Result<std::fs::File, input::Error>) -> AocResult {
     match input {
         Ok(input) => func(input),
-        Err(error) => (format!("{:?}", error), None),
+        Err(error) => format!("{:?}", error).into(),
     }
 }
 
 fn output_result<T: FnOnce() -> AocResult>(res: T) {
     let time_begin = std::time::SystemTime::now();
-    let res = res();
-    println!("--- Part 1 ---");
-    println!("{}", res.0);
-    if let Some(res) = res.1 {
-        println!("--- part 2 ---");
-        println!("{}", res);
-    }
+    println!("{}", res());
     println!("--- Time ---");
     println!(
         "{}s",
@@ -95,7 +91,7 @@ fn main() {
         output_all_results(year, &funcs2022);
     } else {
         if let Some(day) = args.day {
-            output_single_result(day, year, &aoc2022::get_funcs());
+            output_single_result(day, year, &funcs2022);
         } else {
             output_last_result(year, &funcs2022);
         }
