@@ -26,9 +26,8 @@ fn output_result<T: FnOnce() -> AocResult>(res: T) {
 }
 
 fn output_all_results(year: i32, funcs: &[AocFun]) {
-    let results = get_results(year, funcs);
     let start = std::time::SystemTime::now();
-    for (i, res) in results {
+    for (i, res) in get_results(year, funcs) {
         println!("==== Day {} ====", i + 1);
         output_result(res);
         println!();
@@ -52,8 +51,7 @@ fn get_results(
 }
 
 fn output_last_result(year: i32, funcs: &[AocFun]) {
-    let results = get_results(year, funcs);
-    if let Some((i, res)) = results.last() {
+    if let Some((i, res)) = get_results(year, funcs).last() {
         println!("==== Day {} ====", i + 1);
         output_result(res);
         println!();
@@ -61,8 +59,7 @@ fn output_last_result(year: i32, funcs: &[AocFun]) {
 }
 
 fn output_single_result(day: usize, year: i32, funcs: &[AocFun]) {
-    let results = get_results(year, funcs);
-    if let Some((i, res)) = results.skip(day - 1).next() {
+    if let Some((i, res)) = get_results(year, funcs).nth(day - 1) {
         println!("==== Day {} ====", i + 1);
         output_result(res);
         println!();
@@ -89,11 +86,9 @@ fn main() {
     let funcs2022 = aoc2022::get_funcs();
     if args.all {
         output_all_results(year, &funcs2022);
+    } else if let Some(day) = args.day {
+        output_single_result(day, year, &funcs2022);
     } else {
-        if let Some(day) = args.day {
-            output_single_result(day, year, &funcs2022);
-        } else {
-            output_last_result(year, &funcs2022);
-        }
+        output_last_result(year, &funcs2022);
     }
 }
