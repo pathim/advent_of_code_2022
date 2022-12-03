@@ -12,11 +12,17 @@ impl<T1: ToString, T2: ToString> From<(T1, T2)> for AocResult {
         Self(s1.to_string(), Some(s2.to_string()))
     }
 }
-impl From<i32> for AocResult {
-    fn from(s: i32) -> Self {
-        s.to_string().into()
-    }
+macro_rules! from_ints {
+	($($t:ty),*) => {
+		$(impl From<$t> for AocResult {
+			fn from(s: $t) -> Self {
+				s.to_string().into()
+			}
+		})*
+	};
 }
+
+from_ints!(u8, u16, u32, u64, i8, i16, i32, i64);
 
 impl Display for AocResult {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
