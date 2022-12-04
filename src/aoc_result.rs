@@ -22,7 +22,7 @@ macro_rules! from_ints {
 	};
 }
 
-from_ints!(u8, u16, u32, u64, i8, i16, i32, i64);
+from_ints!(u8, u16, u32, u64, usize, i8, i16, i32, i64);
 
 impl Display for AocResult {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
