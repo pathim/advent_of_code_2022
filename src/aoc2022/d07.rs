@@ -1,102 +1,64 @@
-use std::collections::HashMap;
 use std::io::BufRead;
-#[derive(Debug)]
-enum Entry {
-    Dir(HashMap<String, Entry>),
-    File(usize),
-}
 
-fn get_dir<'a>(fs: &'a mut Entry, pos: &[String]) -> &'a mut Entry {
-    if pos.is_empty() {
-        return fs;
-    }
-    if let Entry::Dir(hm) = fs {
-        return get_dir(hm.get_mut(&pos[0]).unwrap(), &pos[1..]);
-    }
-    panic!("Not a directory");
-}
-
-fn get_dir_size(fs: &HashMap<String, Entry>) -> usize {
+fn get_file_sizes(lines: &mut impl Iterator<Item = String>) -> (usize, Option<String>) {
     let mut size = 0;
-    for v in fs.values() {
-        size += match v {
-            Entry::Dir(hm) => get_dir_size(hm),
-            Entry::File(s) => *s,
-        };
-    }
-    size
-}
-
-fn get_dir_sizes(fs: &HashMap<String, Entry>) -> Vec<usize> {
-    let mut res = Vec::new();
-    for v in fs.values() {
-        match v {
-            Entry::Dir(hm) => {
-                let ds = get_dir_size(hm);
-                res.push(ds);
-                res.extend(get_dir_sizes(hm));
-            }
-            Entry::File(_) => {}
+    for l in lines {
+        if l.starts_with('$') {
+            return (size, Some(l));
+        }
+        let (s1, _) = l.split_once(' ').unwrap();
+        if !s1.starts_with('d') {
+            size += s1.parse::<usize>().unwrap();
         }
     }
-    res
+    (size, None)
+}
+
+fn get_dir_sizes(lines: &mut impl Iterator<Item = String>) -> (usize, Vec<usize>) {
+    let mut line = lines.next();
+    let mut size = 0;
+    let mut child_sizes = Vec::new();
+    while let Some(l) = &line {
+        if l.starts_with("$ ls") {
+            let (file_size, nl) = get_file_sizes(lines);
+            size += file_size;
+            if nl.is_none() {
+                break;
+            }
+            line = nl;
+        } else if l.starts_with("$ cd ..") {
+            break;
+        } else if l.starts_with("$ cd") {
+            let (dsize, csize) = get_dir_sizes(lines);
+            child_sizes.extend(csize);
+            child_sizes.push(dsize);
+            size += dsize;
+            line = lines.next();
+        } else {
+            panic!("Illegal command {}", l);
+        }
+        if line.is_none() {
+            break;
+        }
+    }
+    (size, child_sizes)
 }
 
 pub fn f(file: std::fs::File) -> crate::AocResult {
     let input = std::io::BufReader::new(file);
     let mut lines = input.lines().map(|x| x.unwrap());
-    let mut fs = Entry::Dir(HashMap::new());
-    let mut fs_pos = Vec::new();
-    let mut line = lines.next();
-    while line.is_some() {
-        let l = line.take().unwrap();
-        let l = l.trim();
-        if l.starts_with('$') {
-            let (_, cmd) = l.split_once(' ').unwrap();
-            if cmd.starts_with('c') {
-                let (_, dir) = cmd.split_once(' ').unwrap();
-                if dir == ".." {
-                    fs_pos.pop();
-                } else if dir == "/" {
-                    fs_pos.clear();
-                } else {
-                    fs_pos.push(dir.to_string());
-                }
-                line = lines.next();
-            } else if cmd.starts_with('l') {
-                loop {
-                    line = lines.next();
-                    if let Some(ref l) = line {
-                        if l.starts_with('$') {
-                            break;
-                        }
-                        let (size, name) = l.split_once(' ').unwrap();
-                        let new_entry = if size.starts_with('d') {
-                            Entry::Dir(HashMap::new())
-                        } else {
-                            Entry::File(size.parse().unwrap())
-                        };
-                        let dir = get_dir(&mut fs, &fs_pos);
-                        if let Entry::Dir(hm) = dir {
-                            hm.insert(name.to_string(), new_entry);
-                        }
-                    } else {
-                        break;
-                    }
-                }
-            }
-        }
-    }
-    if let Entry::Dir(hm) = &fs {
-        let total_size = get_dir_size(hm);
-        let needed_size = 30000000 - (70000000 - total_size);
-        let mut sizes = get_dir_sizes(hm);
-        sizes.sort();
-        let res1: usize = sizes.iter().filter(|&x| *x <= 100000).sum();
-        let res2 = sizes.iter().find(|&x| *x >= needed_size).unwrap();
+    let l = lines.next().unwrap();
 
-        (res1, res2).into()
-    } else {
-        panic!("Not a dir")
+    if l.starts_with("$ cd") {
+        let (size, mut csize) = get_dir_sizes(&mut lines);
+        csize.push(size);
+        csize.sort();
+        let needed_size = 30000000 - (70000000 - size);
+        let res1: usize = csize.iter().filter(|&x| *x <= 100000).sum();
+        let res2 = csize.iter().find(|&x| *x >= needed_size).unwrap();
+
+        return (res1, res2).into();
     }
+
+    unreachable!()
 }
