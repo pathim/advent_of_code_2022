@@ -37,13 +37,13 @@ impl FromStr for Move {
 }
 
 impl Move {
-    pub fn execute(&self, stacks: &mut Vec<Vec<char>>) {
+    pub fn execute(&self, stacks: &mut [Vec<char>]) {
         for _ in 0..self.count {
             let val = stacks[self.from].pop().unwrap();
             stacks[self.to].push(val);
         }
     }
-    pub fn execute2(&self, stacks: &mut Vec<Vec<char>>) {
+    pub fn execute2(&self, stacks: &mut [Vec<char>]) {
         let pos = stacks[self.from].len() - self.count;
         for _ in 0..self.count {
             let val = stacks[self.from].remove(pos);
@@ -59,7 +59,7 @@ pub fn f(file: std::fs::File) -> crate::AocResult {
         stacks.push(Vec::new())
     }
     let mut lines = input.lines().map(Result::unwrap);
-    while let Some(l) = lines.next() {
+    for l in lines.by_ref() {
         if !l.contains('[') {
             break;
         }
