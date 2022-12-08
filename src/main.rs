@@ -15,27 +15,35 @@ fn wrap_func(func: &AocFun, input: Result<std::fs::File, input::Error>) -> AocRe
     }
 }
 
-fn output_result<T: FnOnce() -> AocResult>(res: T) {
+fn output_result<T: FnOnce() -> AocResult>(res: T) -> std::time::Duration {
     let time_begin = std::time::SystemTime::now();
     println!("{}", res());
     println!("--- Time ---");
-    println!(
-        "{}s",
-        time_begin.elapsed().unwrap_or_default().as_secs_f64()
-    );
+    let time = time_begin.elapsed().unwrap_or_default();
+    println!("{}s", time.as_secs_f64());
+    time
 }
 
 fn output_all_results(year: i32, funcs: &[AocFun]) {
     let start = std::time::SystemTime::now();
+    let mut longest_time = (0, std::time::Duration::from_secs(0));
     for (i, res) in get_results(year, funcs) {
         println!("==== Day {} ====", i + 1);
-        output_result(res);
+        let time = output_result(res);
+        if time > longest_time.1 {
+            longest_time = (i + 1, time);
+        }
         println!();
     }
     println!(
         "Total time: {}s",
         start.elapsed().unwrap_or_default().as_secs_f64()
     );
+    println!(
+        "Longest day: {} with {}s",
+        longest_time.0,
+        longest_time.1.as_secs_f64()
+    )
 }
 fn get_results(
     year: i32,
