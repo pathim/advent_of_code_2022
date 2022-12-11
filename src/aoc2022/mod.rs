@@ -7,6 +7,7 @@ mod d06;
 mod d07;
 mod d08;
 mod d09;
+mod d10;
 
 pub fn get_funcs() -> Vec<crate::AocFun> {
     vec![
@@ -19,5 +20,6 @@ pub fn get_funcs() -> Vec<crate::AocFun> {
         d07::f,
         d08::f,
         d09::f,
+        d10::f,
     ]
 }
