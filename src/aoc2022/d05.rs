@@ -67,7 +67,7 @@ pub fn f(file: std::fs::File) -> crate::AocResult {
             if c == ' ' {
                 continue;
             }
-            if (i - 1) % 4 == 0 {
+            if (i + 3) % 4 == 0 {
                 stacks[(i - 1) / 4].push(c);
             }
         }
