@@ -74,7 +74,7 @@ impl FromStr for Dir {
             'D' => Ok(Self::Down),
             'L' => Ok(Self::Left),
             'R' => Ok(Self::Right),
-            x @ _ => Err(format!("'{}' is not a valid direction", x)),
+            x => Err(format!("'{}' is not a valid direction", x)),
         }
     }
 }
