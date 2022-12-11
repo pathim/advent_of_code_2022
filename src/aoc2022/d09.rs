@@ -17,9 +17,25 @@ impl std::ops::Add for Pos {
         Pos(self.0 + rhs.0, self.1 + rhs.1)
     }
 }
+impl std::ops::AddAssign for Pos {
+    fn add_assign(&mut self, rhs: Self) {
+        self.0 += rhs.0;
+        self.1 += rhs.1;
+    }
+}
 impl From<(i32, i32)> for Pos {
     fn from((x, y): (i32, i32)) -> Self {
         Self(x, y)
+    }
+}
+impl From<Dir> for Pos {
+    fn from(d: Dir) -> Self {
+        Pos::from(match d {
+            Dir::Up => (-1, 0),
+            Dir::Down => (1, 0),
+            Dir::Left => (0, -1),
+            Dir::Right => (0, 1),
+        })
     }
 }
 impl std::fmt::Display for Pos {
@@ -93,34 +109,31 @@ impl FromStr for RepeatMove {
         Ok(Self { dir, count })
     }
 }
-struct Field {
+struct Rope {
     head: Pos,
     tail: Pos,
     visited: std::collections::HashSet<Pos>,
 }
 
-impl Field {
-    pub fn do_move(&mut self, m: Dir) {
-        self.head = Pos::from(match m {
-            Dir::Up => (-1, 0),
-            Dir::Down => (1, 0),
-            Dir::Left => (0, -1),
-            Dir::Right => (0, 1),
-        }) + self.head;
-        self.move_tail();
+impl Rope {
+    pub fn do_move(&mut self, m: Pos) -> Pos {
+        self.head += m;
+        self.move_tail()
     }
 
-    fn move_tail(&mut self) {
+    fn move_tail(&mut self) -> Pos {
         let delta = self.head - self.tail;
         if delta.absmax() <= 1 {
-            return;
+            return Pos::default();
         }
-        self.tail = self.tail + delta.clamp();
+        let delta = delta.clamp();
+        self.tail += delta;
         self.visited.insert(self.tail);
+        delta
     }
 }
 
-impl Default for Field {
+impl Default for Rope {
     fn default() -> Self {
         let mut visited = std::collections::HashSet::new();
         let p0 = Pos::default();
@@ -132,16 +145,25 @@ impl Default for Field {
         }
     }
 }
+
+fn move_long_rope(rope: &mut [Rope], m: Pos) {
+    let mut m = m;
+    for r in rope {
+        m = r.do_move(m);
+    }
+}
 pub fn f(file: std::fs::File) -> crate::AocResult {
     let input = std::io::BufReader::new(file);
-    let mut field = Field::default();
+    let mut rope: [Rope; 9] = Default::default();
     for m in input
         .lines()
         .map(|l| l.unwrap().parse::<RepeatMove>().unwrap())
     {
         for _ in 0..m.count {
-            field.do_move(m.dir);
+            move_long_rope(&mut rope, m.dir.into())
         }
     }
-    field.visited.len().into()
+    let res1 = rope[0].visited.len();
+    let res2 = rope[8].visited.len();
+    (res1, res2).into()
 }
