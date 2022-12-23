@@ -18,7 +18,7 @@ impl PartialOrd for Path {
     }
 }
 
-fn get_next_steps(pos: (usize, usize), map: &Vec<Vec<u8>>) -> Vec<(usize, usize)> {
+fn get_next_steps(pos: (usize, usize), map: &Vec<Vec<u8>>, reverse: bool) -> Vec<(usize, usize)> {
     let h_cur = map[pos.1][pos.0];
     let mut res = Vec::new();
     for d in [(-1, 0), (1, 0), (0, -1), (0, 1)] {
@@ -30,8 +30,9 @@ fn get_next_steps(pos: (usize, usize), map: &Vec<Vec<u8>>) -> Vec<(usize, usize)
             .get(pn.1 as usize)
             .and_then(|v| v.get(pn.0 as usize))
             .copied()
-            .unwrap_or(0xff);
-        if h_cur + 1 >= hn {
+            .unwrap_or_else(|| if reverse { 0 } else { 0xff });
+
+        if (!reverse && (h_cur + 1 >= hn)) || (reverse && (hn >= h_cur - 1)) {
             res.push((pn.0 as usize, pn.1 as usize))
         }
     }
@@ -69,15 +70,14 @@ pub fn f(file: std::fs::File) -> crate::AocResult {
         let r = vec![usize::MAX; l.len()];
         shortest_paths.push(r);
     }
+    let mut shortest_paths2 = shortest_paths.clone();
 
     let mut paths = BinaryHeap::new();
-    let p0 = Path { steps: vec![start] };
-    println!("{:?}", end);
-    paths.push(p0);
+    paths.push(Path { steps: vec![start] });
     let res1 = 'outer: loop {
         let p = paths.pop().unwrap();
         let cpos = p.steps.last().unwrap().clone();
-        let next = get_next_steps(cpos, &map);
+        let next = get_next_steps(cpos, &map, false);
         for n in next {
             if n == end {
                 break 'outer p.steps.len();
@@ -92,6 +92,27 @@ pub fn f(file: std::fs::File) -> crate::AocResult {
             }
         }
     };
+    drop(shortest_paths);
+    paths.clear();
+    paths.push(Path { steps: vec![end] });
+    let res2 = 'outer: loop {
+        let p = paths.pop().unwrap();
+        let cpos = p.steps.last().unwrap().clone();
+        let next = get_next_steps(cpos, &map, true);
+        for n in next {
+            if map[n.1][n.0] == 0 {
+                break 'outer p.steps.len();
+            }
+            let shortest = shortest_paths2[n.1][n.0];
+            if p.steps.len() + 1 < shortest {
+                let mut np = p.clone();
+                np.steps.push(n);
+                shortest_paths2[n.1][n.0] = np.steps.len();
 
-    res1.into()
+                paths.push(np);
+            }
+        }
+    };
+
+    (res1, res2).into()
 }
