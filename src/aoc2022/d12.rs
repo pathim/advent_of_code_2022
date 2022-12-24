@@ -1,9 +1,15 @@
 use std::collections::BinaryHeap;
 use std::io::BufRead;
 
-#[derive(Clone, Debug, PartialEq, Eq, Ord)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 struct Path {
     steps: Vec<(usize, usize)>,
+}
+
+impl Ord for Path {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        self.partial_cmp(other).unwrap()
+    }
 }
 
 impl PartialOrd for Path {
@@ -18,7 +24,7 @@ impl PartialOrd for Path {
     }
 }
 
-fn get_next_steps(pos: (usize, usize), map: &Vec<Vec<u8>>, reverse: bool) -> Vec<(usize, usize)> {
+fn get_next_steps(pos: (usize, usize), map: &[Vec<u8>], reverse: bool) -> Vec<(usize, usize)> {
     let h_cur = map[pos.1][pos.0];
     let mut res = Vec::new();
     for d in [(-1, 0), (1, 0), (0, -1), (0, 1)] {
@@ -30,7 +36,7 @@ fn get_next_steps(pos: (usize, usize), map: &Vec<Vec<u8>>, reverse: bool) -> Vec
             .get(pn.1 as usize)
             .and_then(|v| v.get(pn.0 as usize))
             .copied()
-            .unwrap_or_else(|| if reverse { 0 } else { 0xff });
+            .unwrap_or(if reverse { 0 } else { 0xff });
 
         if (!reverse && (h_cur + 1 >= hn)) || (reverse && (hn >= h_cur - 1)) {
             res.push((pn.0 as usize, pn.1 as usize))
@@ -76,7 +82,7 @@ pub fn f(file: std::fs::File) -> crate::AocResult {
     paths.push(Path { steps: vec![start] });
     let res1 = 'outer: loop {
         let p = paths.pop().unwrap();
-        let cpos = p.steps.last().unwrap().clone();
+        let cpos = *p.steps.last().unwrap();
         let next = get_next_steps(cpos, &map, false);
         for n in next {
             if n == end {
@@ -97,7 +103,7 @@ pub fn f(file: std::fs::File) -> crate::AocResult {
     paths.push(Path { steps: vec![end] });
     let res2 = 'outer: loop {
         let p = paths.pop().unwrap();
-        let cpos = p.steps.last().unwrap().clone();
+        let cpos = *p.steps.last().unwrap();
         let next = get_next_steps(cpos, &map, true);
         for n in next {
             if map[n.1][n.0] == 0 {
