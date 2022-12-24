@@ -63,7 +63,7 @@ impl Packet {
                 list.push(v);
                 inner = r;
             }
-            return Some((Self::List(list), rest));
+            Some((Self::List(list), rest))
         } else {
             let mut value = 0;
             for (i, c) in s.chars().enumerate() {
@@ -92,7 +92,7 @@ impl FromStr for Packet {
 impl PartialOrd for Packet {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
         match (self, other) {
-            (Self::Value(v1), Self::Value(v2)) => return v1.partial_cmp(v2),
+            (Self::Value(v1), Self::Value(v2)) => v1.partial_cmp(v2),
             (Self::List(l1), Self::List(l2)) => {
                 let mut index = 0;
                 loop {
@@ -114,10 +114,10 @@ impl PartialOrd for Packet {
                 }
             }
             (p1 @ Self::List(_), Self::Value(x)) => {
-                return p1.partial_cmp(&Self::List(vec![Self::Value(*x)]))
+                p1.partial_cmp(&Self::List(vec![Self::Value(*x)]))
             }
             (Self::Value(x), p2 @ Self::List(_)) => {
-                return Self::List(vec![Self::Value(*x)]).partial_cmp(p2)
+                Self::List(vec![Self::Value(*x)]).partial_cmp(p2)
             }
         }
     }
