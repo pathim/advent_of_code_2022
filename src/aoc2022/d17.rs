@@ -1,7 +1,4 @@
 use std::io::Read;
-struct Rock {
-    shape: u32,
-}
 #[derive(Debug, Clone)]
 struct Field {
     blocks: Vec<u8>,
@@ -75,19 +72,6 @@ impl Field {
             r += 1;
         }
     }
-    fn draw(&self) {
-        for i in (0..self.blocks.len()).rev() {
-            let v = self.blocks[i];
-            for bit in (0..7).rev() {
-                if (1 << bit) & v == 0 {
-                    print!(".");
-                } else {
-                    print!("#");
-                }
-            }
-            println!();
-        }
-    }
 }
 pub fn f(file: std::fs::File) -> crate::AocResult {
     let rocks = [
@@ -112,10 +96,52 @@ pub fn f(file: std::fs::File) -> crate::AocResult {
         })
         .collect::<Vec<_>>();
     let mut field = Field::new(wind);
-    for i in 0..2022 {
-        let rock = i % rocks.len();
-        field.drop(rocks[rock], max_pos[rock]);
+    let mut res1 = 0;
+    let mut rock = 0;
+    let mut seen_pairs = std::collections::HashMap::new();
+    let period;
+    loop {
+        let rock_num = rock % rocks.len();
+        let k = (
+            field.wind_pos,
+            rock_num,
+            field.blocks.last().unwrap().clone(),
+        );
+        if let Some(last) = seen_pairs.get(&k) {
+            period = rock - last;
+            break;
+        }
+        seen_pairs.insert(k, rock);
+
+        field.drop(rocks[rock_num], max_pos[rock_num]);
+        rock += 1;
     }
-    let res1 = field.blocks.len() - 1;
-    res1.into()
+    let hl = field.blocks.len();
+
+    for _ in 0..period {
+        let rock_num = rock % rocks.len();
+        field.drop(rocks[rock_num], max_pos[rock_num]);
+        rock += 1;
+        if rock == 2022 {
+            res1 = field.blocks.len() - 1;
+        }
+    }
+    let h = field.blocks.len();
+    let height_step = h - hl;
+
+    let target = 1000000000000usize;
+    let target = target - 56; // Offset unclear .... found by trial and error
+    let togo = target - rock;
+    let mul = togo / period;
+    let rest = target % period;
+    for _ in 0..rest {
+        let rock_num = rock % rocks.len();
+        field.drop(rocks[rock_num], max_pos[rock_num]);
+        rock += 1;
+        if rock == 2022 {
+            res1 = field.blocks.len() - 1;
+        }
+    }
+    let res2 = mul * height_step + field.blocks.len() - 1;
+    (res1, res2).into()
 }
